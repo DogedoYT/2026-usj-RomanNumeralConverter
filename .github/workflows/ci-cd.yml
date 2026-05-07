@@ -28,25 +28,23 @@ jobs:
         with:
           node-version: '20'
       
-      - name: Install jsdom for testing
+      - name: Run tests with Node.js
         run: |
-          npm install -g jsdom mocha
-      
-      - name: Run tests with Mocha
-        run: |
-          npx mocha test.html --jsdom || exit 1
+          node run-tests.js
       
       - name: Basic Linting - Check for console.log
         run: |
-          if grep -rn "console.log" *.js *.html; then
-            echo "⚠️ WARNING: console.log statements found"
+          echo "🔍 Checking for console.log statements..."
+          if grep -rn "console.log" *.js *.html 2>/dev/null; then
+            echo "⚠️ WARNING: console.log statements found (non-blocking)"
           else
             echo "✅ No console.log statements found"
           fi
       
       - name: Basic Linting - Block debugger statements
         run: |
-          if grep -rn "debugger" *.js *.html; then
+          echo "🔍 Checking for debugger statements..."
+          if grep -rn "debugger" *.js *.html 2>/dev/null; then
             echo "❌ ERROR: debugger statement found!"
             exit 1
           else
@@ -55,8 +53,11 @@ jobs:
       
       - name: Basic Linting - Check for TODO comments
         run: |
-          if grep -rn "TODO" *.js *.html; then
-            echo "⚠️ WARNING: TODO comments found"
+          echo "🔍 Checking for TODO comments..."
+          if grep -rn "TODO" *.js *.html 2>/dev/null; then
+            echo "⚠️ WARNING: TODO comments found (non-blocking)"
+          else
+            echo "✅ No TODO comments found"
           fi
 
   deploy:
@@ -78,10 +79,11 @@ jobs:
       - name: Prepare deployment files
         run: |
           mkdir deploy
-          cp index.html deploy/
+          cp index.html deploy/ 2>/dev/null || cp indexRefactor.html deploy/index.html
           cp roman-converter.js deploy/
           cp test.html deploy/
           cp tests.js deploy/
+          echo "Files ready for deployment:"
           ls -la deploy/
       
       - name: Upload artifact
