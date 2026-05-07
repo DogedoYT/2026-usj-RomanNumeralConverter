@@ -1,0 +1,94 @@
+name: CI/CD - Roman Converter
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  test-and-lint:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Install jsdom for testing
+        run: |
+          npm install -g jsdom mocha
+      
+      - name: Run tests with Mocha
+        run: |
+          npx mocha test.html --jsdom || exit 1
+      
+      - name: Basic Linting - Check for console.log
+        run: |
+          if grep -rn "console.log" *.js *.html; then
+            echo "⚠️ WARNING: console.log statements found"
+          else
+            echo "✅ No console.log statements found"
+          fi
+      
+      - name: Basic Linting - Block debugger statements
+        run: |
+          if grep -rn "debugger" *.js *.html; then
+            echo "❌ ERROR: debugger statement found!"
+            exit 1
+          else
+            echo "✅ No debugger statements found"
+          fi
+      
+      - name: Basic Linting - Check for TODO comments
+        run: |
+          if grep -rn "TODO" *.js *.html; then
+            echo "⚠️ WARNING: TODO comments found"
+          fi
+
+  deploy:
+    needs: test-and-lint
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+      
+      - name: Prepare deployment files
+        run: |
+          mkdir deploy
+          cp index.html deploy/
+          cp roman-converter.js deploy/
+          cp test.html deploy/
+          cp tests.js deploy/
+          ls -la deploy/
+      
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: deploy/
+      
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
