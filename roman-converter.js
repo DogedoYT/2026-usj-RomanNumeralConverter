@@ -60,6 +60,11 @@ class RomanConverter {
     }
 
     static toInteger(roman) {
+        // Trim whitespace first
+        if (typeof roman === 'string') {
+            roman = roman.trim();
+        }
+        
         if (!roman || roman.length === 0) {
             return { success: false, error: 'Empty input', value: 0 };
         }
