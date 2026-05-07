@@ -1,5 +1,5 @@
-// run-tests.js - Simple test runner for CI/CD
-const fs = require('fs');
+// run-tests.js - ES Module version for CI/CD
+import fs from 'fs';
 
 console.log("\n🧪 Roman Numeral Converter - CI/CD Tests\n");
 console.log("=".repeat(50));
@@ -8,41 +8,53 @@ console.log("=".repeat(50));
 const converterCode = fs.readFileSync('./roman-converter.js', 'utf8');
 
 // Create a module context
-const module = { exports: {} };
-const exports = module.exports;
+let RomanConverter = null;
 
-// Execute the code
 try {
-    // Create a function that will run in a context where module.exports works
-    const func = new Function('module', 'exports', 'console', converterCode);
-    func(module, exports, console);
+    // Create a dynamic module from the code
+    const module = { exports: {} };
+    const exports = module.exports;
     
-    // Get RomanConverter from either module.exports or global
-    let RomanConverter = null;
-    
-    if (module.exports && module.exports.RomanConverter) {
-        RomanConverter = module.exports.RomanConverter;
-        console.log("✅ RomanConverter found in module.exports");
-    } else if (global.RomanConverter) {
-        RomanConverter = global.RomanConverter;
-        console.log("✅ RomanConverter found in global");
-    } else {
-        // Try to eval in a context that captures window assignments
-        const sandbox = {};
-        const evalCode = `
+    // Execute the code in a context that mimics Node.js module
+    const evalCode = `
+        (function(module, exports, require, __dirname, __filename) {
             ${converterCode}
-            return { RomanConverter, IntegerValidator };
+            return module.exports;
+        })
+    `;
+    
+    const moduleFactory = eval(evalCode);
+    const moduleExports = moduleFactory(module, exports, await import('module'), '.', './roman-converter.js');
+    
+    // Try to get RomanConverter from exports
+    if (moduleExports && moduleExports.RomanConverter) {
+        RomanConverter = moduleExports.RomanConverter;
+        console.log("✅ RomanConverter found in module.exports");
+    } else if (module.exports && module.exports.RomanConverter) {
+        RomanConverter = module.exports.RomanConverter;
+        console.log("✅ RomanConverter found in module.exports (original)");
+    }
+    
+    if (!RomanConverter) {
+        // Last resort - eval in global context
+        const globalContext = {};
+        const wrapperCode = `
+            ${converterCode}
+            globalContext.RomanConverter = RomanConverter;
+            globalContext.IntegerValidator = IntegerValidator;
         `;
-        const result = eval(evalCode);
-        if (result && result.RomanConverter) {
-            RomanConverter = result.RomanConverter;
-            console.log("✅ RomanConverter found via eval");
+        eval(wrapperCode);
+        
+        // @ts-ignore
+        if (globalThis.RomanConverter) {
+            RomanConverter = globalThis.RomanConverter;
+            console.log("✅ RomanConverter found in global scope");
         }
     }
     
     if (!RomanConverter) {
         console.log("❌ RomanConverter class not found! Check roman-converter.js");
-        console.log("Module exports keys:", Object.keys(module.exports));
+        console.log("Module exports:", Object.keys(module.exports));
         process.exit(1);
     }
     
@@ -57,22 +69,6 @@ try {
 // Helper functions
 let passed = 0;
 let failed = 0;
-
-function formatRoman(roman) {
-    return roman;
-}
-
-function expect(actual, expected, testName) {
-    if (actual === expected) {
-        console.log(`✅ PASS: ${testName}`);
-        passed++;
-        return true;
-    } else {
-        console.log(`❌ FAIL: ${testName} - Expected "${expected}" but got "${actual}"`);
-        failed++;
-        return false;
-    }
-}
 
 function expectRomanToSucceed(roman, expected, testName) {
     const result = RomanConverter.toInteger(roman);
