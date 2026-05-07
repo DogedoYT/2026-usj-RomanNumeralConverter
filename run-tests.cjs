@@ -4,12 +4,12 @@ const fs = require('fs');
 console.log("\n🧪 Roman Numeral Converter - CI/CD Tests\n");
 console.log("=".repeat(50));
 
-// Read and execute the converter code
+// Read the converter code
 const converterCode = fs.readFileSync('./roman-converter.js', 'utf8');
 
-// Create a module context
-const module = { exports: {} };
-const exports = module.exports;
+// Create a unique module context (don't use 'module' as variable name)
+const moduleObj = { exports: {} };
+const exportsObj = moduleObj.exports;
 
 // Execute the code
 try {
@@ -22,19 +22,19 @@ try {
     `;
     
     const moduleFactory = eval(evalCode);
-    const result = moduleFactory(module, exports);
+    const result = moduleFactory(moduleObj, exportsObj);
     
     let RomanConverter = null;
     
     if (result && result.RomanConverter) {
         RomanConverter = result.RomanConverter;
-    } else if (module.exports && module.exports.RomanConverter) {
-        RomanConverter = module.exports.RomanConverter;
+    } else if (moduleObj.exports && moduleObj.exports.RomanConverter) {
+        RomanConverter = moduleObj.exports.RomanConverter;
     }
     
     if (!RomanConverter) {
         console.log("❌ RomanConverter class not found!");
-        console.log("Module exports keys:", Object.keys(module.exports));
+        console.log("Module exports keys:", Object.keys(moduleObj.exports));
         process.exit(1);
     }
     
@@ -127,7 +127,7 @@ try {
     expectIntegerToSucceed(1984, 'MCMLXXXIV', 'ESSENTIAL: 1984 → "MCMLXXXIV"');
     expectIntegerToSucceed(2024, 'MMXXIV', 'ESSENTIAL: 2024 → "MMXXIV"');
     
-    // Invalid inputs
+    // Invalid inputs - 3.5 should now fail
     expectIntegerToFail(0, 'TC-IR-19: 0 → error');
     expectIntegerToFail(-5, 'TC-IR-20: -5 → error');
     expectIntegerToFail(4000, 'TC-IR-21: 4000 → error');
@@ -169,7 +169,7 @@ try {
     expectRomanToSucceed('Ⅺ', 11, 'UNICODE: "Ⅺ" → 11');
     expectRomanToSucceed('ⅩⅣ', 14, 'UNICODE: "ⅩⅣ" → 14');
     
-    // Invalid inputs
+    // Invalid inputs - "ABC" should now fail
     expectRomanToFail('', 'TC-RI-19: empty string → error');
     expectRomanToFail(null, 'null input → error');
     expectRomanToFail('   ', 'whitespace only → error');
