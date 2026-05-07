@@ -1,64 +1,44 @@
-// run-tests.js - ES Module version for CI/CD
-import fs from 'fs';
+// run-tests.cjs - CommonJS version for CI/CD
+const fs = require('fs');
+const vm = require('vm');
 
 console.log("\n🧪 Roman Numeral Converter - CI/CD Tests\n");
 console.log("=".repeat(50));
 
-// Load and execute the converter code
+// Read the converter code
 const converterCode = fs.readFileSync('./roman-converter.js', 'utf8');
 
-// Create a module context
-let RomanConverter = null;
+// Create a sandbox environment
+const sandbox = {
+    console: console,
+    window: {},
+    module: { exports: {} },
+    exports: {},
+    RomanConverter: null,
+    IntegerValidator: null
+};
 
 try {
-    // Create a dynamic module from the code
-    const module = { exports: {} };
-    const exports = module.exports;
+    // Run the code in the sandbox
+    vm.runInNewContext(converterCode, sandbox);
     
-    // Execute the code in a context that mimics Node.js module
-    const evalCode = `
-        (function(module, exports, require, __dirname, __filename) {
-            ${converterCode}
-            return module.exports;
-        })
-    `;
+    // Get RomanConverter from sandbox
+    let RomanConverter = sandbox.RomanConverter;
     
-    const moduleFactory = eval(evalCode);
-    const moduleExports = moduleFactory(module, exports, await import('module'), '.', './roman-converter.js');
-    
-    // Try to get RomanConverter from exports
-    if (moduleExports && moduleExports.RomanConverter) {
-        RomanConverter = moduleExports.RomanConverter;
-        console.log("✅ RomanConverter found in module.exports");
-    } else if (module.exports && module.exports.RomanConverter) {
-        RomanConverter = module.exports.RomanConverter;
-        console.log("✅ RomanConverter found in module.exports (original)");
+    if (!RomanConverter && sandbox.module && sandbox.module.exports) {
+        RomanConverter = sandbox.module.exports.RomanConverter;
     }
     
     if (!RomanConverter) {
-        // Last resort - eval in global context
-        const globalContext = {};
-        const wrapperCode = `
-            ${converterCode}
-            globalContext.RomanConverter = RomanConverter;
-            globalContext.IntegerValidator = IntegerValidator;
-        `;
-        eval(wrapperCode);
-        
-        // @ts-ignore
-        if (globalThis.RomanConverter) {
-            RomanConverter = globalThis.RomanConverter;
-            console.log("✅ RomanConverter found in global scope");
-        }
-    }
-    
-    if (!RomanConverter) {
-        console.log("❌ RomanConverter class not found! Check roman-converter.js");
-        console.log("Module exports:", Object.keys(module.exports));
+        console.log("❌ RomanConverter class not found!");
+        console.log("Available in sandbox:", Object.keys(sandbox));
         process.exit(1);
     }
     
     console.log("✅ RomanConverter loaded successfully");
+    
+    // Make it available for tests
+    global.RomanConverter = RomanConverter;
     
 } catch (err) {
     console.log("❌ Failed to load converter:", err.message);
@@ -77,7 +57,7 @@ function expectRomanToSucceed(roman, expected, testName) {
         passed++;
         return true;
     } else {
-        console.log(`❌ FAIL: ${testName} - Expected ${expected} but got ${result.value} (success: ${result.success})`);
+        console.log(`❌ FAIL: ${testName} - Expected ${expected} but got ${result.value}`);
         failed++;
         return false;
     }
@@ -162,7 +142,7 @@ expectIntegerToSucceed(444, 'CDXLIV', 'ESSENTIAL: 444 → "CDXLIV"');
 expectIntegerToSucceed(1984, 'MCMLXXXIV', 'ESSENTIAL: 1984 → "MCMLXXXIV"');
 expectIntegerToSucceed(2024, 'MMXXIV', 'ESSENTIAL: 2024 → "MMXXIV"');
 
-// Invalid inputs
+// Invalid inputs - FIXED: now 3.5 should fail
 expectIntegerToFail(0, 'TC-IR-19: 0 → error');
 expectIntegerToFail(-5, 'TC-IR-20: -5 → error');
 expectIntegerToFail(4000, 'TC-IR-21: 4000 → error');
@@ -222,7 +202,7 @@ expectRomanToFail('', 'TC-RI-19: empty string → error');
 expectRomanToFail(null, 'null input → error');
 expectRomanToFail('   ', 'whitespace only → error');
 
-// Invalid patterns
+// Invalid patterns - FIXED: "ABC" should now fail
 expectRomanToFail('IIII', 'TC-RI-20: "IIII" → error');
 expectRomanToFail('XIIV', 'TC-RI-21: "XIIV" → error');
 expectRomanToFail('MMMM', 'TC-RI-22: "MMMM" → error');
