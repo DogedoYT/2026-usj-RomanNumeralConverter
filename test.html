@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Roman Converter - Automated Tests</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/mocha/10.2.0/mocha.min.css" />
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    #mocha {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    h1 {
+      text-align: center;
+      color: #3d2f1f;
+    }
+    .test-summary {
+      text-align: center;
+      padding: 10px;
+      background: #e8dfd1;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Roman Numeral Converter - Test Suite</h1>
+  <div class="test-summary">
+    <strong>Testing Framework:</strong> Mocha + Chai | 
+    <strong>Functions:</strong> RomanConverter.toInteger() and RomanConverter.fromInteger()
+  </div>
+  <div id="mocha"></div>
+
+  <!-- Load Mocha and Chai libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mocha/10.2.0/mocha.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chai/4.3.7/chai.min.js"></script>
+  
+  <!-- Set up Mocha in BDD mode -->
+  <script>
+    mocha.setup('bdd');
+  </script>
+  
+  <!-- Load the shared converter logic (THIS IS THE FIX) -->
+  <script src="roman-converter.js"></script>
+  
+  <!-- Load the test implementations -->
+  <script src="tests.js"></script>
+  
+  <!-- Run the tests -->
+  <script>
+    mocha.run();
+  </script>
+</body>
+</html>
