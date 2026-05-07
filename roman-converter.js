@@ -60,58 +60,57 @@ class RomanConverter {
     }
 
     static toInteger(roman) {
-    if (!roman || roman.length === 0) {
-        return { success: false, error: 'Empty input', value: 0 };
+        if (!roman || roman.length === 0) {
+            return { success: false, error: 'Empty input', value: 0 };
+        }
+
+        const normalized = this.normalizeUnicode(roman);
+        
+        // STRICT VALIDATION - ALL characters must be valid Roman numerals
+        const validRomanPattern = /^[IVXLCDM]+$/i;
+        if (!validRomanPattern.test(normalized)) {
+            return { success: false, error: 'Input contains invalid characters', value: 0 };
+        }
+
+        const clean = this.cleanRomanString(normalized);
+
+        if (clean.length === 0) {
+            return { success: false, error: 'No valid Roman characters', value: 0 };
+        }
+
+        if (!this.validateRomanFormat(clean)) {
+            return { success: false, error: 'Invalid Roman format', value: 0 };
+        }
+
+        const value = this.calculateValue(clean);
+
+        const reconstructed = this.fromInteger(value);
+        if (reconstructed !== clean) {
+            return { success: false, error: 'Invalid Roman combination', value: 0 };
+        }
+
+        return { success: true, value };
     }
-
-    const normalized = this.normalizeUnicode(roman);
-    
-    // NEW: Strict validation - ALL characters must be valid Roman numerals
-    const validRomanPattern = /^[IVXLCDM]+$/i;
-    if (!validRomanPattern.test(normalized)) {
-        return { success: false, error: 'Input contains invalid characters', value: 0 };
-    }
-
-    const clean = this.cleanRomanString(normalized);
-
-    if (clean.length === 0) {
-        return { success: false, error: 'No valid Roman characters', value: 0 };
-    }
-
-    if (!this.validateRomanFormat(clean)) {
-        return { success: false, error: 'Invalid Roman format', value: 0 };
-    }
-
-    const value = this.calculateValue(clean);
-
-    const reconstructed = this.fromInteger(value);
-    if (reconstructed !== clean) {
-        return { success: false, error: 'Invalid Roman combination', value: 0 };
-    }
-
-    return { success: true, value };
-}
 
     static fromInteger(num) {
-    // Reject non-integers (decimals like 3.5)
-    if (!Number.isInteger(num)) {
-        return '';
-    }
-    if (num < VALIDATION.MIN || num > VALIDATION.MAX) {
-        return '';
-    }
-
-    let result = '';
-    let remaining = num;
-
-    for (const [value, symbol] of ROMAN_MAPPINGS) {
-        while (remaining >= value) {
-            result += symbol;
-            remaining -= value;
+        // Reject non-integers (decimals like 3.5)
+        if (!Number.isInteger(num)) {
+            return '';
         }
-    }
-    return result;
-}
+        if (num < VALIDATION.MIN || num > VALIDATION.MAX) {
+            return '';
+        }
+
+        let result = '';
+        let remaining = num;
+
+        for (const [value, symbol] of ROMAN_MAPPINGS) {
+            while (remaining >= value) {
+                result += symbol;
+                remaining -= value;
+            }
+        }
+        return result;
     }
 }
 
@@ -144,7 +143,7 @@ if (typeof window !== 'undefined') {
     window.IntegerValidator = IntegerValidator;
 }
 
-// Export for Node.js testing (if needed)
+// Export for Node.js testing
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = { RomanConverter, IntegerValidator };
 }
