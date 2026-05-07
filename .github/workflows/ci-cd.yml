@@ -26,11 +26,11 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '18'
       
       - name: Run tests with Node.js
         run: |
-          node run-tests.js
+          node run-tests.cjs
       
       - name: Basic Linting - Check for console.log
         run: |
