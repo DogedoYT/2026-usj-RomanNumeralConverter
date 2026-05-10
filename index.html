@@ -277,39 +277,67 @@
             }
 
             convertRomanToInteger() {
-                this.clearError();
-                const roman = this.dom.romanInput.value.trim();
+    this.clearError();
+    const roman = this.dom.romanInput.value.trim();
 
-                if (roman === '') {
-                    this.showError('Enter a Roman numeral');
-                    return;
-                }
+    if (roman === '') {
+        this.showError('Enter a Roman numeral');
+        // Track error event
+        gtag('event', 'conversion_error', {
+            'error_type': 'empty_input',
+            'conversion_type': 'roman_to_int'
+        });
+        return;
+    }
 
-                const result = RomanConverter.toInteger(roman);
+    const result = RomanConverter.toInteger(roman);
 
-                if (!result.success) {
-                    this.showError('That Roman number doesn\'t exist');
-                    return;
-                }
+    if (!result.success) {
+        this.showError('That Roman number doesn\'t exist');
+        // Track error event
+        gtag('event', 'conversion_error', {
+            'error_type': 'invalid_roman',
+            'conversion_type': 'roman_to_int'
+        });
+        return;
+    }
 
-                this.dom.intInput.value = result.value;
-            }
+    this.dom.intInput.value = result.value;
+    
+    // Track successful conversion
+    gtag('event', 'convert_roman_to_int', {
+        'value': result.value
+    });
+}
 
             convertIntegerToRoman() {
-                this.clearError();
-                const validation = IntegerValidator.validate(this.dom.intInput.value);
+    this.clearError();
+    const validation = IntegerValidator.validate(this.dom.intInput.value);
 
-                if (!validation.success) {
-                    this.showError(validation.error);
-                    return;
-                }
+    if (!validation.success) {
+        this.showError(validation.error);
+        // Track error event
+        gtag('event', 'conversion_error', {
+            'error_type': 'invalid_integer',
+            'conversion_type': 'int_to_roman'
+        });
+        return;
+    }
 
-                const roman = RomanConverter.fromInteger(validation.value);
-                this.dom.romanInput.value = roman;
-            }
+    const roman = RomanConverter.fromInteger(validation.value);
+    this.dom.romanInput.value = roman;
+    
+    // Track successful conversion
+    gtag('event', 'convert_int_to_roman', {
+        'value': validation.value
+    });
+}
 
             swapValues() {
-                this.clearError();
+    this.clearError();
+    
+    // Track swap event
+    gtag('event', 'swap_conversion', {});
 
                 const roman = this.dom.romanInput.value.trim();
                 const intValue = this.dom.intInput.value.trim();
